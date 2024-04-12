@@ -2,6 +2,8 @@ from collections import defaultdict
 import click
 import os
 import requests
+from unittest.mock import patch
+import atcoder
 
 @click.command()
 @click.argument("contest")
@@ -17,6 +19,7 @@ def main(contest, dif):
         pass
     else:
         make_testcase(contest, dif)
+    test(contest, dif)
 
 def scrape_page_html(contest, dif):
     URL = f"https://atcoder.jp/contests/abc{contest}/tasks/abc{contest}_{dif}"
@@ -81,12 +84,32 @@ def make_testcase(contest, dif):
     #何度もダウンロードせずに、一回だけHTMLをダウンロードする
     if not os.path.exists(f"AtCoder_{contest}/{dif}/testcase"):
         scrape_page_html(contest, dif)
-        print("ok")
         parse_test_case(contest, dif)
         
         
 def test(contest, dif):
-    pass
+    for i in sorted(os.listdir(f"AtCoder_{contest}/{dif}/testcase")):
+        print(f"テストケース{i}:")
+        input_ = []
+        with open(f"AtCoder_{contest}/{dif}/testcase/{i}/input", 'r') as f:
+            for l in f.readlines():
+                input_.append(l.strip("\n"))
+        output_ = []
+        with open(f"AtCoder_{contest}/{dif}/testcase/{i}/output", 'r') as f:
+            for l in f.readlines():
+                output_.append(l.strip("\n"))
+        output_ = "".join(output_)
+        with patch('builtins.input', side_effect=input_):
+            user_output = atcoder.main()
+            if user_output == output_:
+                print("OK")
+            else:
+                print("ユーザーのアウトプット")
+                print(user_output)
+                print()
+                print("答え")
+                print(output_)
+                print("-----")
 
 if __name__ == "__main__":
     main()
